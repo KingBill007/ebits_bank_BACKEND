@@ -16,26 +16,39 @@ router.post('/create', async (req,res)=>{
         userId: req.body.userId
     })
     try{
-        const response = await Acc.save();
-        res.status(200).json({
-            sucess: 'true',
-            Message: response.data
-        })
+        //Check if User Account type already exists
+        const ifExists = await Account.exists({accType:req.body.type , userId:req.body.userId})
+        if(ifExists){
+            res.json({
+            Sucess: false,
+            message: "User already has this Account type"
+            })
+        } else if (!ifExists){
+            //Save new account details
+            const response = await Acc.save();
+            res.json({
+                Sucess: true,
+                message: response
+            })
+        }
     }catch(err){
-        res.status(500).send(err);
+        console.log(err)
+        res.json({
+            Sucess: false,
+            message: err
+        });
     }
 })
 
 //get user details  
 router.get('/checkAcc/:id', async (req,res)=>{
     const userid = req.params.id;
-    console.log(userid)
     try{
         const response = await Account.find({userId:userid}).populate('userId')
         res.send(response)
     }catch(err){
         res.status(500).json({
-            sucess: "false",
+            Sucess: "false",
             message: err
         })
     }
@@ -44,7 +57,7 @@ router.get('/checkAcc/:id', async (req,res)=>{
 //deposit money
 router.post('/deposit',async (req,res)=>{
     const targetaccNo = req.body.accNumber;
-    const pay = req.body.amount;
+    const pay = Number(req.body.amount);
     const type = req.body.accType
     try{
         const accountData = await Account.find({'accNumber':targetaccNo,"accType":type})
@@ -55,7 +68,7 @@ router.post('/deposit',async (req,res)=>{
         
         if (newAmount<0){//if user doesnt have enough to withraw. Error!
             res.json({
-                sucess: false,
+                Sucess: false,
                 message: "Insufficient funds."
             });
             return;
@@ -66,7 +79,7 @@ router.post('/deposit',async (req,res)=>{
             {new:true}
         )
         res.status(200).json({
-            sucess:true,
+            Sucess:true,
             message: `New amount: ${updateValue.Value}`
         });
     }catch(err){}
