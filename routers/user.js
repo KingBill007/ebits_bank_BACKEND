@@ -2,12 +2,20 @@ const express = require('express');
 const router = express.Router();
 const {User} = require('../models/user');
 
-router.get("/", async (req,res)=>{
-    User.find().then((resp)=>{
-        res.send(resp)
-    }).catch((err)=>{
-        res.send(err)
-    })
+router.get("/getUser/:id", async (req,res)=>{
+    const userId = req.params.id;
+    try{
+        const user = await User.find({ _id : userId }, '-password')
+        res.json({
+            Sucess: true,
+            message: user
+        })
+    }catch(err){
+        res.json({
+            Sucess: false,
+            message: err
+        })
+    }
 })
 
 //create a new user

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const {Account} = require('../models/account');
+const {Transaction} = require('../models/transaction');
+
 
 router.get('/', async (req,res)=>{
     const acc = await Account.find();
@@ -58,13 +60,14 @@ router.get('/checkAcc/:id', async (req,res)=>{
 router.post('/deposit',async (req,res)=>{
     const targetaccNo = req.body.accNumber;
     const pay = Number(req.body.amount);
-    const type = req.body.accType
+    const type = req.body.accType;
+    const user = req.body.userId
     try{
         const accountData = await Account.find({'accNumber':targetaccNo,"accType":type})
         const targetId = String(accountData[0]._id)
         const oldAmount = accountData[0].Value;
         const newAmount = oldAmount + pay
-        console.log('New amount:',newAmount)
+        //console.log('New amount:',newAmount)
         
         if (newAmount<0){//if user doesnt have enough to withraw. Error!
             res.json({
@@ -73,16 +76,41 @@ router.post('/deposit',async (req,res)=>{
             });
             return;
         }
+        if (isNaN(req.body.amount) || !req.body.amount){//check if amount is a number
+            res.json({
+                Sucess: false,
+                message: "Amount must be a valid number!"
+            });
+        }
+        //deposit function
         const updateValue = await Account.findByIdAndUpdate(
             targetId,
             {Value:newAmount},
             {new:true}
         )
-        res.status(200).json({
+        if (req.body.amout < 0){
+
+        }
+        //After Deposit record transaction history
+        const history = new Transaction({
+            accNumber: targetaccNo,
+            userId : user,//ERROR HERE
+            Value : String(req.body.amount),
+            accType : type,
+            description : req.body.description
+        })
+        const historySave = await history.save()
+        console.log(historySave);
+        res.json({
             Sucess:true,
             message: `New amount: ${updateValue.Value}`
         });
-    }catch(err){}
+    }catch(err){
+        res.json({
+            Sucess: false,
+            message: err
+        });
+    }
 })
 
 module.exports = router;
