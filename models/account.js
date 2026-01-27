@@ -15,6 +15,7 @@ const accountSchema = mongoose.Schema({
     },
     accType: {
         type: String,
+        enum: ['Savings', 'Current'],
     }
 })
 exports.Account = mongoose.model('Account', accountSchema)
